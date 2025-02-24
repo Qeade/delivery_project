@@ -5,5 +5,6 @@ export const ProductSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   imageUrl: { type: String, required: true },
   description: { type: String, required: true },
+  isLicensed: { type: Boolean, required: true },
   created_at: { type: Date, default: Date.now },
 });

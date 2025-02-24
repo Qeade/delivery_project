@@ -11,6 +11,7 @@ import {
   Delete,
   Param,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -21,29 +22,35 @@ import {
   ApiBody,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import mongoose from 'mongoose';
+import { Roles } from 'src/auth/roles.decorator';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { JwtAuthGuard } from 'src/auth/auth.guard';
 
-@ApiTags('products')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiTags('Товари')
 @Controller('product')
 export class ProductController {
   constructor(private productService: ProductService) {}
 
-  //створення
+  @Roles('admin')
   @Post('/create')
-  @ApiOperation({ summary: 'Create a new product' })
+  @ApiOperation({ summary: 'Створення нового товару' })
   @ApiBody({
     type: CreateProductDto,
-    description: 'Product data that needs to be created',
+    description: 'Дані для створення товару',
   })
-  @ApiResponse({ status: 201, description: 'Product successfully created' })
-  @ApiResponse({ status: 400, description: 'Invalid product data' })
+  @ApiResponse({ status: 201, description: 'Товар створено успішно' })
+  @ApiResponse({ status: 400, description: 'Неправильні дані товару' })
   async addProduct(@Res() res, @Body() createProductDTO: CreateProductDto) {
     try {
       const { name, price } = createProductDTO;
 
       if (price <= 0) {
-        throw new BadRequestException('Price must be greater than zero');
+        throw new BadRequestException('Ціна має бути більша 0');
       }
       const existingProducts =
         await this.productService.findProductsByName(name);
@@ -59,7 +66,7 @@ export class ProductController {
       });
 
       return res.status(HttpStatus.CREATED).json({
-        message: 'Product has been created successfully',
+        message: 'Товар був успішно створений',
         product,
       });
     } catch (error) {
@@ -67,102 +74,100 @@ export class ProductController {
     }
   }
 
-  //всі
   @Get('products')
   @ApiOperation({
-    summary: 'Get all products',
-    description: 'Fetches all available products in the database',
+    summary: 'Отримати всі товари',
+    description: 'Витягує всі товари',
   })
-  @ApiResponse({ status: 200, description: 'All the products received' })
+  @ApiResponse({ status: 200, description: 'Всі товари отримані' })
   async getAllProducts(@Res() res) {
     const products = await this.productService.getAllProducts();
     return res.status(HttpStatus.OK).json(products);
   }
 
-  //за ID
   @Get(':productID')
-  @ApiOperation({ summary: 'Get product by ID' })
+  @ApiOperation({ summary: 'Отримати товар за ID' })
   @ApiParam({
     name: 'productID',
     required: true,
-    description: 'ID of the product',
+    description: 'ID товару',
   })
-  @ApiResponse({ status: 200, description: 'Product found' })
-  @ApiResponse({ status: 400, description: 'Invalid product ID format' })
-  @ApiResponse({ status: 404, description: 'Product not found' })
+  @ApiResponse({ status: 200, description: 'Товар знайдено' })
+  @ApiResponse({ status: 400, description: 'Неправильний формат ID товару' })
+  @ApiResponse({ status: 404, description: 'Товар не знайдений' })
   async getProduct(@Res() res, @Param('productID') productID: string) {
     if (!mongoose.Types.ObjectId.isValid(productID)) {
-      throw new BadRequestException('Invalid product ID format');
+      throw new BadRequestException('Неправильний формат ID товару');
     }
 
     const product = await this.productService.getProduct(productID);
-    if (!product) throw new NotFoundException('Product does not exist!');
+    if (!product) throw new NotFoundException('Продукт не існує');
     return res.status(HttpStatus.OK).json(product);
   }
 
-  // оновлення
+  @Roles('admin')
   @Put('/update')
-  @ApiOperation({ summary: 'Update an existing product' })
+  @ApiOperation({ summary: 'Оновити існуючий товар' })
   @ApiQuery({
     name: 'productID',
     required: true,
-    description: 'ID of the product to update',
+    description: 'ID товару для оновлення',
   })
   @ApiBody({
     type: CreateProductDto,
-    description: 'Updated product data',
+    description: 'Оновлені дані товару',
   })
-  @ApiResponse({ status: 200, description: 'Product successfully updated' })
+  @ApiResponse({ status: 200, description: 'Товар успішно оновлено' })
   @ApiResponse({
     status: 400,
-    description: 'Invalid product ID format or invalid price',
+    description: 'Невірний формат ID товару або неправильна ціна',
   })
-  @ApiResponse({ status: 404, description: 'Product not found' })
+  @ApiResponse({ status: 404, description: 'Товар не знайдений' })
   async updateProduct(
     @Res() res,
     @Query('productID') productID: string,
     @Body() createProductDto: CreateProductDto,
   ) {
     if (!mongoose.Types.ObjectId.isValid(productID)) {
-      throw new BadRequestException('Invalid product ID format');
+      throw new BadRequestException('Невірний формат ID товару');
     }
 
     if (createProductDto.price !== undefined && createProductDto.price < 0) {
-      throw new BadRequestException('Price cannot be less than 0');
+      throw new BadRequestException('Ціна не може бути меншою за 0');
     }
 
     const product = await this.productService.updateProduct(
       productID,
       createProductDto,
     );
-    if (!product) throw new NotFoundException('Product does not exist!');
+    if (!product) throw new NotFoundException('Товар не існує!');
 
     return res.status(HttpStatus.OK).json({
-      message: 'Product has been successfully updated',
+      message: 'Товар був успішно оновлений',
       product,
     });
   }
 
-  //видалення
+  @Roles('admin')
   @Delete('/delete')
-  @ApiOperation({ summary: 'Delete a product' })
+  @ApiOperation({ summary: 'Видалити товар' })
   @ApiQuery({
     name: 'productID',
     required: true,
-    description: 'ID of the product to delete',
+    description: 'ID товару для видалення',
   })
-  @ApiResponse({ status: 200, description: 'Product successfully deleted' })
-  @ApiResponse({ status: 400, description: 'Invalid product ID format' })
-  @ApiResponse({ status: 404, description: 'Product not found' })
+  @ApiResponse({ status: 200, description: 'Товар успішно видалено' })
+  @ApiResponse({ status: 400, description: 'Невірний формат ID товару' })
+  @ApiResponse({ status: 404, description: 'Товар не знайдений' })
   async deleteProduct(@Res() res, @Query('productID') productId: string) {
     if (!mongoose.Types.ObjectId.isValid(productId)) {
-      throw new BadRequestException('Invalid product ID format');
+      throw new BadRequestException('Невірний формат ID товару');
     }
 
     const product = await this.productService.deleteProduct(productId);
-    if (!product) throw new NotFoundException('Product does not exist');
+    if (!product) throw new NotFoundException('Товар не існує');
     return res.status(HttpStatus.OK).json({
-      message: 'Product has been deleted',
+      message: 'Товар був видалений',
       product,
     });
   }

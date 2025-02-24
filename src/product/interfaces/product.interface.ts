@@ -5,5 +5,6 @@ export interface Product extends Document {
   readonly price: Number;
   readonly imageUrl: String;
   readonly description: String;
+  readonly isLicensed: Boolean;
   readonly created_at: Date;
 }
