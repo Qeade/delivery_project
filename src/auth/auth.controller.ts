@@ -6,12 +6,16 @@ import {
   HttpStatus,
   UsePipes,
   ValidationPipe,
+  Get,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { JwtAuthGuard } from './auth.guard';
 
 @ApiTags('Авторизація')
 @Controller('auth')
@@ -41,9 +45,11 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Користувач успішно авторизований' })
   @ApiResponse({ status: 400, description: 'Невірний логін або пароль' })
   async login(@Res() res, @Body() loginDto: LoginDto) {
-    const { token } = await this.authService.login(loginDto);
+    const { user, token } = await this.authService.login(loginDto);
+
     return res.status(HttpStatus.OK).json({
       message: 'Користувач успішно авторизований',
+      user,
       token,
     });
   }

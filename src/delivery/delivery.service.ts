@@ -67,7 +67,7 @@ export class DeliveryService {
       user: userId,
       address: addressId,
       products,
-      status: 'Прийнято',
+      status: 'В обробці',
       deliveryPrice,
       totalPrice,
     });

@@ -40,7 +40,7 @@ export class AuthService {
     const newUser = new this.userModel({
       ...registerDto,
       password: hashedPassword,
-      role: 'admin',
+      role: 'user',
     });
 
     await newUser.save();
@@ -65,10 +65,10 @@ export class AuthService {
       throw new Error('JWT_SECRET не визначений');
     }
 
-    return jwt.sign(payload, jwtSecret, { expiresIn: '1h' });
+    return jwt.sign(payload, jwtSecret, { expiresIn: '24h' });
   }
 
-  async login(loginDto: LoginDto): Promise<{ token: string }> {
+  async login(loginDto: LoginDto): Promise<{ user: User; token: string }> {
     const { phoneNumber, password } = loginDto;
 
     const user = await this.userModel.findOne({ phoneNumber });
@@ -83,6 +83,7 @@ export class AuthService {
     }
 
     const token = this.createJwtToken(user);
-    return { token };
+
+    return { user, token };
   }
 }

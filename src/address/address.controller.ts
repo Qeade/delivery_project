@@ -93,6 +93,17 @@ export class AddressController {
     }
   }
 
+  @Get('/color/:addressId')
+  @ApiOperation({ summary: 'Отримати колір адреси доставки та ціну' })
+  @ApiResponse({ status: 200, description: 'Адресу знайдено' })
+  @ApiResponse({ status: 400, description: 'Некоректний ID адреси' })
+  @ApiResponse({ status: 404, description: 'Адресу не знайдено' })
+  async getAddressColor(
+    @Param('addressId') addressId: string,
+  ): Promise<{ color: string; price: number }> {
+    return await this.addressService.getAddressColor(addressId);
+  }
+
   @Put('/update/:addressId')
   @ApiOperation({ summary: 'Оновити адресу' })
   @ApiResponse({ status: 200, description: 'Адресу успішно оновлено' })

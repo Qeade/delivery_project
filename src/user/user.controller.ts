@@ -28,6 +28,7 @@ import mongoose from 'mongoose';
 import { Roles } from 'src/auth/roles.decorator';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { JwtAuthGuard } from 'src/auth/auth.guard';
+import { VerifyPasswordDto } from './dto/verify-password.dto';
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -66,6 +67,36 @@ export class UserController {
     const user = await this.userService.getUserById(userID);
     if (!user) throw new NotFoundException('Користувач не існує!');
     return res.status(HttpStatus.OK).json(user);
+  }
+
+  @Post('/verify-password')
+  @ApiOperation({ summary: 'Перевірити пароль користувача' })
+  @ApiBody({ type: VerifyPasswordDto, description: 'Пароль для перевірки' })
+  @ApiResponse({ status: 200, description: 'Пароль правильний' })
+  @ApiResponse({
+    status: 400,
+    description: 'Невірний пароль або користувач не знайдений',
+  })
+  async verifyPassword(
+    @Res() res,
+    @Body() verifyPasswordDto: VerifyPasswordDto,
+  ) {
+    const { userID, password } = verifyPasswordDto;
+
+    if (!mongoose.Types.ObjectId.isValid(userID)) {
+      throw new BadRequestException('Невірний формат ID користувача');
+    }
+
+    const isValid = await this.userService.verifyPassword(userID, password);
+    if (!isValid) {
+      return res
+        .status(HttpStatus.BAD_REQUEST)
+        .json({ success: false, message: 'Невірний пароль' });
+    }
+
+    return res
+      .status(HttpStatus.OK)
+      .json({ success: true, message: 'Пароль правильний' });
   }
 
   @Put('/update')

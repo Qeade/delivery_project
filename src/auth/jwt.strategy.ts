@@ -4,7 +4,6 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/user/interfaces/user.interface';
-import { JwtPayload } from './jwt-payload.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -15,13 +14,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload) {
-    const user = await this.userModel.findById(payload.id);
-
+  async validate(payload: { id: string }) {
+    const user = await this.userModel.findById(payload.id).select('-password');
     if (!user) {
       throw new UnauthorizedException();
     }
-
-    return { id: user._id, role: user.role };
+    return user;
   }
 }

@@ -24,6 +24,10 @@ export class UpdateUserDto {
   @IsNotEmpty()
   phoneNumber: string;
 
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Дата народження', example: '04-03-2025' })
+  birthDate: Date;
+
   @ApiProperty({ description: 'Пароль користувача (мінімум 6 символів)' })
   @IsString()
   @MinLength(6)
@@ -32,8 +36,4 @@ export class UpdateUserDto {
   @ApiProperty({ description: 'Роль користувача', enum: ['user', 'admin'] })
   @IsEnum(['user', 'admin'])
   role: 'user' | 'admin';
-
-  @ApiProperty({ description: 'Дата створення користувача', required: false })
-  @IsOptional()
-  createdAt?: Date;
 }

@@ -29,32 +29,31 @@ export class CartService {
       throw new NotFoundException('Корзину не знайдено');
     }
 
-    const cartObj = cart.toObject();
-
-    const existingProduct = cartObj.products.find(
-      (p) => p.product === productId,
+    // Знаходимо товар у кошику
+    const existingProduct = cart.products.find(
+      (p) => p.product.toString() === productId,
     );
 
     if (existingProduct) {
-      existingProduct.quantity += quantity;
-      if (existingProduct.quantity <= 0) {
-        cartObj.products = cartObj.products.filter(
-          (p) => p.product !== productId,
+      existingProduct.quantity = quantity; // Оновлюємо кількість
+
+      if (quantity <= 0) {
+        // Видаляємо товар з кошика
+        cart.products = cart.products.filter(
+          (p) => p.product.toString() !== productId,
         );
       }
     } else {
-      if (quantity < 0) {
+      if (quantity > 0) {
+        cart.products.push({ product: productId, quantity });
+      } else {
         throw new BadRequestException(
           'Помилка. Даного продукту немає в корзині',
         );
       }
-      cartObj.products.push({ product: productId, quantity });
     }
 
-    await this.cartModel.updateOne(
-      { user: userId },
-      { products: cartObj.products },
-    );
+    await cart.save(); // Зберігаємо зміни
 
     return this.cartModel
       .findOne({ user: userId })

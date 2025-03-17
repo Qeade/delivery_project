@@ -23,6 +23,35 @@ export class AddressService {
     return newAddress.save();
   }
 
+  async getAddressColor(
+    addressId: string,
+  ): Promise<{ color: string; price: number }> {
+    if (!addressId || addressId === 'null') {
+      throw new BadRequestException('Некоректний ідентифікатор адреси');
+    }
+
+    const address = await this.addressModel.findById(addressId).exec();
+    if (!address) {
+      throw new NotFoundException('Адреса не знайдена');
+    }
+
+    let color: string;
+    let price: number;
+
+    if (address.city === 'Хмельницький') {
+      color = 'Адреса в зеленій зоні';
+      price = 50;
+    } else if (address.country === 'Україна') {
+      color = 'Адреса в жовтій зоні';
+      price = 200;
+    } else {
+      color = 'Адреса в червоній зоні';
+      price = 500;
+    }
+
+    return { color, price };
+  }
+
   async getAllAddresses(): Promise<Address[]> {
     return this.addressModel.find().exec();
   }
